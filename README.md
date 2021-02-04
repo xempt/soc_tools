@@ -40,3 +40,8 @@ optional arguments:
   -h, --help            show this help message and exit
   -v, --version         show version
   -f PATH, --file PATH  file location
+
+
+## License
+GNU GPL V3
+Check out LICENSE file. 
