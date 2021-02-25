@@ -10,6 +10,7 @@ Use package manager pip to install required librarys.
 ```bash
 pip install -r requirements.txt
 ```
+edit keys.ini and add your api keys. 
 
 ## Usage
 

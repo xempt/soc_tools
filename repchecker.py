@@ -5,20 +5,24 @@ Version 1
 Revision: 
 """
 
+import configparser
 import os,sys, getopt,argparse , mimetypes, time
 import ipaddress,socket
 import requests
 import json
-
 from requests.models import Response
+from configparser import ConfigParser
 
-#api keys here
-abuseIPkey = ''
-virusTotalKey = ''
+
+#read keys.ini
+iniParser = ConfigParser()
+iniParser.read('keys.ini')
+
+abuseIPkey = iniParser.get('keys','abuseip')
+virusTotalKey = iniParser.get('keys','virustotal')
+
 
 def main():
-    #todo: check if api key section is filled out. 
-
 
     try:
         #parser info 
@@ -216,10 +220,8 @@ def abuseIP(address):#
         return results
     else:
         return 0
-    #results = ip +","+ str(decodedResponse['data']['abuseConfidenceScore']) + "," + str(decodedResponse['data']['lastReportedAt'])
-    
 
-#check if ip address is a valid ip
+
 def ipcheck(ipAddress):
     try:
         ipaddress.IPv4Network(ipAddress)
