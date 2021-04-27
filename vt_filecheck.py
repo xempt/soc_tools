@@ -223,7 +223,5 @@ def yes_no(answer):
         else:
             print("Respond yes or no")
             
-
-
 if __name__ == '__main__':
     main()

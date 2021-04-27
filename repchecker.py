@@ -7,12 +7,14 @@ Revision:
 
 import configparser
 import os,sys, getopt,argparse , mimetypes, time
-import ipaddress,socket
 import requests
 import json
 from requests.models import Response
 from configparser import ConfigParser
-
+from modules import threatcrowd
+from modules import network
+from modules import virustotal
+from modules import abuseip
 
 #read keys.ini
 iniParser = ConfigParser()
@@ -23,6 +25,7 @@ virusTotalKey = iniParser.get('keys','virustotal')
 
 
 def main():
+
 
     try:
         #parser info 
@@ -48,8 +51,8 @@ def main():
                 #print(i)
                 print("[*] Getting reputation for", i.format(), "")
                 print("---------------------------------------------------")
-                if ipcheck(i):
-                    abuseIPResults = abuseIP(i)
+                if network.ipcheck(i):
+                    abuseIPResults = abuseip.check(i,abuseIPkey)
                     if abuseIPResults != 0:
                         print("Score: ",str(abuseIPResults['data']['abuseConfidenceScore']))
                         print("ISP: ",str(abuseIPResults['data']['isp']), end=' ')                
@@ -62,7 +65,7 @@ def main():
                     print("[*]AbuseIP takes IP only. Skipping\n")                            
                 #vtResults
                 time.sleep(15)#since we currently do not have a pro api key for vt, we will rate limit ourselves. 
-                vtResults = virusTotal(i)
+                vtResults = virustotal.check(i,virusTotalKey)
                 if vtResults != 0:
                     print('[*] VirusTotal: ', end=' ')
                     print('Harmless:',str(vtResults['data']['attributes']['last_analysis_stats']['harmless']), end =' ')
@@ -76,7 +79,7 @@ def main():
                 else:
                     print("no data from VirusTotal")
                 #threatcrowd
-                tcResults = threatCrowd(i)
+                tcResults = threatcrowd.check(i)
                 print("[*] Threatcrowd: ")
                 #print(tcResults)
                 if tcResults != 0:                    
@@ -97,7 +100,7 @@ def main():
         if args.i:
             print("[*] Getting reputation for", args.i.format(), "\n")
                 #AbuseIpDB Results
-            abuseIPResults = abuseIP(args.i)                
+            abuseIPResults = abuseip.check(args.i,abuseIPkey)               
             if abuseIPResults != 0:
                 print("[*] AbuseIPDB:  ", end=' ')
                 #print(abuseIPResults)
@@ -111,7 +114,7 @@ def main():
                 print("No Data from AbuseIP. Note: Abuseip only takes IP addresses")
 
             #VT Results
-            vtResults = virusTotal(args.i)
+            vtResults = virustotal.check(args.i,virusTotalKey)
             #print(vtResults)
             if vtResults != 0:
                 print('[*] VirusTotal: ', end=' ')
@@ -125,8 +128,8 @@ def main():
                 print('Result link https://www.virustotal.com/gui/search/'+args.i.strip()+"")
             else:
                 print("No Data from VirusTotal")                
-            #threatcrowd
-            tcResults = threatCrowd(args.i)
+            #threatcrowd            
+            tcResults = threatcrowd.check(args.i)
             print("[*] Threatcrowd: ")
             #print(tcResults)
             if tcResults != 0:                    
@@ -145,98 +148,6 @@ def main():
     except Exception as e:
         print(e)
 
-def threatCrowd(address):
-    headers = {
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
-    }
-    if ipcheck(address):
-        url = 'http://www.threatcrowd.org/searchApi/v2/ip/report/'
-        params = {
-            'ip': address
-        }        
-    else:
-        url = 'http://www.threatcrowd.org/searchApi/v2/domain/report'
-        params = {
-            'domain': address
-        }
-    response = requests.get(url=url,params=params,headers=headers)
-    #print(response.text)
-    if response.status_code == 200:
-        decodedResponse = response.json()        
-        #print(decodedResponse)
-        if decodedResponse['response_code'] == '0':
-            return 0
-        else:
-            return decodedResponse
-    else:
-        return 0 
-
-def virusTotal(address):
-    key = virusTotalKey
-    headers = {
-        'x-apikey': key
-    }
-    #if its not an IP assume its a domain...... 
-    if ipcheck(address):
-        url = 'https://www.virustotal.com/api/v3/ip_addresses/'+address
-    else:
-        url = 'https://www.virustotal.com/api/v3/domains/'+address    
-    
-    response = requests.get(url=url, headers=headers)
-    if response.status_code == 200:
-        decodedResponse = response.json()
-        results = decodedResponse
-        #print(results)
-        return results
-    else:
-        return 0
-   
-
-def abuseIP(address):#
-    #check address if its real ip, if it fails we're gonna assume its a domain and try to resolve it. 
-    if ipcheck(address) == False: 
-        if resolveHostName(address) != False:
-            address = resolveHostName(address)
-        else:
-            return 0 
-        
-    key = abuseIPkey
-    url = 'https://api.abuseipdb.com/api/v2/check'
-    queryString = {
-        'ipAddress': address,
-        'maxAgeInDays': '180'
-    }
-
-    headers = {
-        'Accept': 'application/json',
-        'Key': key
-    }
-
-
-    response = requests.request(method='GET',url=url, headers=headers,params=queryString)
-    if response.status_code == 200:
-        decodedResponse = response.json()
-        results = decodedResponse
-        return results
-    else:
-        return 0
-
-
-def ipcheck(ipAddress):
-    try:
-        ipaddress.IPv4Network(ipAddress)
-        return True
-    except ValueError:
-        return False
-
-def resolveHostName(address):
-    hostname = address
-    try:
-        ip = socket.gethostbyname(hostname)
-        return ip
-    except socket.gaierror as e:
-        print(e)
-        return False        
 
 def readFile(inputFile):
     newList=[]
