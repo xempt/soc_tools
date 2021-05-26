@@ -23,8 +23,26 @@ def check(address):
         decodedResponse = response.json()        
         #print(decodedResponse)
         if decodedResponse['response_code'] == '0':
-            return 0
+            return output(0)
         else:
-            return decodedResponse
+            return output(decodedResponse)
     else:
-        return 0 
+        return print("Something went wrong please see response message: ",response)
+
+def output(dataInput):
+    #output for data receieved
+    
+    print("[*] Threatcrowd: ")
+    #print(dataInput)
+    if dataInput != 0:
+        if str(dataInput['votes']) == '-1':
+            print("Most users have voted this malicious.")
+        elif str(dataInput['votes']) == '0':
+            print("An equal number of users have voted this malicious.")
+        elif str(dataInput['votes']) == '1': 
+            print("Most users have voted this not malicious")
+        else:
+             print("Unknown value maybe api update? ")        
+        print("Result link: ", str(dataInput['permalink']))
+    else:
+        print("No data from threatcrowd,address too new or error")          
