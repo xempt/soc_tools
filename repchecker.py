@@ -48,28 +48,65 @@ def main():
             sys.exit(0)
         
         if args.path:
-            print("[*] reading list from", args.path.format())
+            print("[*] Reading list from", args.path.format())
             readList = readFile(args.path)
+
+            # MAP : AS to IPs
+            AS_providers = {
+                "AMAZON" : [],
+                "GOOGLE" : [], 
+                "AZURE"  : [],
+                "OTHER"  : [],
+            }
+            # MAP : IP to OUTPUT TEXT
+            IP_results = {}
+
             for i in readList:
                 print("[*] Getting reputation for", i.format(), "")
-                print("---------------------------------------------------")
-                flag = abuseip.check(i,abuseIPkey)               
-                #vtResults
-                time.sleep(15) #since we currently do not have a pro api key for vt, we will rate limit ourselves. 
-                #virus total
-                virustotal.check(i,virusTotalKey, flag=flag)
-                #threatcrowd
-                #threatcrowd.check(i) 
-                print("---------------------------------------------------\n")
+                out_text = "[*] Results for " + str(i) + ":\n"
+                
+                #abuseip
+                abuseip_flag, abuseip_output = abuseip.check(i,abuseIPkey)       
+                out_text += abuseip_output
+                
+                #virustotal
+                time.sleep(15) #api rate limit
+                virustotal_flag, virustotal_output, as_owner =virustotal.check(i,virusTotalKey, flag=abuseip_flag)
+                out_text += virustotal_output
+                out_text += '[*] AS: ' + as_owner + "\n"                
+                out_text += "---------------------------------------------------"
+
+                #save results to maps to print after complete 
+                IP_results[i] = out_text
+                if "AMAZON" in as_owner.upper():
+                    AS_providers["AMAZON"].append(i)
+                elif "GOOGLE" in as_owner.upper():
+                    AS_providers["GOOGLE"].append(i)
+                elif "AZURE" in as_owner.upper():
+                    AS_providers["AZURE"].append(i)
+                else:
+                    AS_providers["OTHER"].append(i)
+
+            # print out saved results
+            print("========================== RESULTS ==========================")
+            for provider in AS_providers:
+                if len(AS_providers[provider]) > 0:
+                    print(provider)
+                    for ip in AS_providers[provider]:
+                        print(IP_results[ip])
        
         if args.i:
-            print("[*] Getting reputation for", args.i.format())
-            #AbuseIpDB Results
-            flag = abuseip.check(args.i,abuseIPkey)               
-            #VT Results
-            virustotal.check(args.i,virusTotalKey, flag=flag)
-            #threatcrowd
-            #threatcrowd.check(args.i)
+            print("[*] Getting reputation for "+args.i.format())
+            #abuseip
+            abuseip_flag, abuseip_output = abuseip.check(args.i,abuseIPkey)   
+            out_text = abuseip_output
+
+            #virustotal
+            virustotal_flag, virustotal_output, as_owner = virustotal.check(args.i,virusTotalKey, flag=abuseip_flag)
+            out_text += virustotal_output
+            out_text += '[*] AS: ' + as_owner + "\n"
+
+            print(out_text)
         
     except Exception as e:
         print(e)

@@ -14,8 +14,7 @@ def check(address,key,output=False):
             ip_address = network.resolveHostName(address)
             print("resolving domain name to ",ip_address.format())
         else:
-            print("Error IP address couldn't resolve")
-            return 0
+            return False, "Error IP address couldn't resolve\n"
     else:
         ip_address = address         
         
@@ -32,36 +31,17 @@ def check(address,key,output=False):
 
     response = requests.request(method='GET',url=url, headers=headers,params=queryString)
     if response.status_code == 200:
-        ret = analysis(response.json(),ip_address)
-        if output: 
-            output(response.json(),ip_address)
+        return analysis(response.json(),ip_address)
     else:        
-        print("Something went wrong please see response message: ",response)
-    
-    return ret
-
-def output(dataInput,address):
-    #output for data receieved
-    sys.stdout = open("output_results.txt", 'w')
-    if dataInput:
-        print("[*] AbuseIPDB:  ", end=' ')
-        #print(dataInput)
-        print("Score: ",str(dataInput['data']['abuseConfidenceScore']))
-        print("ISP: ",str(dataInput['data']['isp']), end=" | ")                
-        print("Domain: ",str(dataInput['data']['domain']), end = '\n')
-        #print("Country: ",str(dataInput['data']['countryName']),end ='\n')
-        print("Usage Type: ",str(dataInput['data']['usageType']))                
-        print("Result Link: https://www.abuseipdb.com/check/"+address.strip()+'\n')
-    else:
-        print("No Data from AbuseIP. Note: AbuseIP only takes IP addresses")    
+        return False, "Something went wrong please see response message: "+response+"\n"
 
 def analysis(dataInput,address):
     score = dataInput['data']['abuseConfidenceScore']
     reports = dataInput['data']['totalReports']
     blockVerdict = score > MAX_SCORE and reports > MIN_REPORTS
     verdict = "Block IP " if blockVerdict else "No action necessary"
-    print("[*] AbuseIPDB:  "+verdict)
+    result = "[*] AbuseIPDB:  "+verdict+"\n"
     if blockVerdict:
-        print("\tScore: ",score," \t| Reports: ",reports)
-        print("\tResult Link: https://www.abuseipdb.com/check/"+address.strip())
-    return blockVerdict
+        result += "\tScore: "+str(score)+" \t| Reports: "+str(reports)+"\n"
+        result += "\tResult Link: https://www.abuseipdb.com/check/"+address.strip()+"\n"
+    return blockVerdict, result
