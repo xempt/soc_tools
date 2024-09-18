@@ -5,15 +5,11 @@ Version 1
 Revision: 
 """
 
-import configparser
-import os,sys, getopt,argparse , mimetypes, time
-import requests
-import json
-from requests.models import Response
+import os,sys,argparse,time
 from configparser import ConfigParser
 
-from modules import threatcrowd
-from modules import network
+#from modules import threatcrowd
+# from modules import network
 from modules import virustotal
 from modules import abuseip
 
@@ -37,8 +33,7 @@ def main():
         parser.add_argument("-v","--version",help="show version",action='version',version='%(prog)s 1.0')
         parser.add_argument("-f","--file",help="file location",type=str,dest="path")
         parser.add_argument("-i","--input",help="check single ip/domain",type=str,dest="i",default='')
-        #parser.add_argument("-o","--output",help="location\filename to save. default: "+os.getcwd()+"\output.txt",type=str,dest="output",default=os.getcwd()+"\output.txt")
-        #output not working yet.... 
+        parser.add_argument("-o","--output",help="filename to save. directory: "+os.getcwd(),type=str,dest="output",default=os.getcwd()+"\output.txt")
 
         #read arguments from cli
         args = parser.parse_args()
@@ -47,19 +42,19 @@ def main():
             parser.print_help()
             sys.exit(0)
         
-        if args.path:
-            print("[*] Reading list from", args.path.format())
-            readList = readFile(args.path)
+        # MAP : AS to IPs
+        AS_providers = {
+            "AMAZON" : [],
+            "GOOGLE" : [], 
+            "AZURE"  : [],
+            "OTHER"  : [],
+        }
+        # MAP : IP to OUTPUT TEXT
+        IP_results = {}
 
-            # MAP : AS to IPs
-            AS_providers = {
-                "AMAZON" : [],
-                "GOOGLE" : [], 
-                "AZURE"  : [],
-                "OTHER"  : [],
-            }
-            # MAP : IP to OUTPUT TEXT
-            IP_results = {}
+        if args.path:
+            print("[*] Reading IPs from", args.path.format())
+            readList = readFile(args.path)
 
             for i in readList:
                 print("[*] Getting reputation for", i.format(), "")
@@ -75,7 +70,7 @@ def main():
                 out_text += virustotal_output
                 if as_owner:
                     out_text += '[*] AS: ' + as_owner + "\n"                
-                out_text += "---------------------------------------------------"
+                out_text += "-------------------------------------------------------------"
 
                 #save results to maps to print after complete 
                 IP_results[i] = out_text
@@ -88,11 +83,21 @@ def main():
                 else:
                     AS_providers["OTHER"].append(i)
 
+
             # print out saved results
             print("========================== RESULTS ==========================")
             for provider in AS_providers:
                 if len(AS_providers[provider]) > 0:
                     print(provider)
+                    for ip in AS_providers[provider]:
+                        print(IP_results[ip])
+       
+                
+            # print out saved results
+            print("========================== RESULTS ==========================")
+            for provider in AS_providers:
+                if len(AS_providers[provider]) > 0:
+                    print("\n"+provider)
                     for ip in AS_providers[provider]:
                         print(IP_results[ip])
        
@@ -107,7 +112,18 @@ def main():
             out_text += virustotal_output
             out_text += '[*] AS: ' + as_owner + "\n"
 
-            print(out_text)
+            IP_results[i] = out_text
+        
+        if args.output:
+            sys.stdout = open(args.output.format(),'w')
+
+        # print out saved results
+        print("========================== RESULTS ==========================")
+        for provider in AS_providers:
+            if len(AS_providers[provider]) > 0:
+                print(provider)
+                for ip in AS_providers[provider]:
+                    print(IP_results[ip])
         
     except Exception as e:
         print(e)

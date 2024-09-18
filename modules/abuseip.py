@@ -1,8 +1,5 @@
 from . import network
 import requests
-from requests.models import Response
-import json
-import sys
 
 MIN_REPORTS = 4
 MAX_SCORE = 30
@@ -12,9 +9,9 @@ def check(address,key,output=False):
     if network.ipcheck(address) != True: 
         if network.resolveHostName(address) != False:
             ip_address = network.resolveHostName(address)
-            print("resolving domain name to ",ip_address.format())
+            print("Resolving domain name to ",ip_address.format())
         else:
-            return False, "Error IP address couldn't resolve\n"
+            return False, "[A] Error resolving IP address\n"
     else:
         ip_address = address         
         
@@ -33,7 +30,7 @@ def check(address,key,output=False):
     if response.status_code == 200:
         return analysis(response.json(),ip_address)
     else:        
-        return False, "Something went wrong please see response message: "+response+"\n"
+        return False, "[A] Error in request/response\n", "N/A"
 
 def analysis(dataInput,address):
     score = dataInput['data']['abuseConfidenceScore']
