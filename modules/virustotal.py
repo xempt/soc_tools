@@ -22,6 +22,7 @@ def check(address,key,output=False, flag=False):
         return False, "Something went wrong please see response message: "+response+"\n", "N/A"
 
 def analysis(dataInput,address, flag):
+    as_owner = None
     score = dataInput['data']['attributes']['reputation']
     reports = dataInput['data']['attributes']['total_votes']['harmless'] + dataInput['data']['attributes']['total_votes']['malicious']
     blockVerdict = abs(score) > MAX_SCORE and reports > MIN_REPORTS
@@ -30,5 +31,8 @@ def analysis(dataInput,address, flag):
     if blockVerdict or flag:
         result += "\tScore: "+str(score)+" \t| Reports: "+str(reports)+"\n"
         result += "\tResult link https://www.virustotal.com/gui/search/"+address.strip()+"\n"
-    as_owner = str(dataInput['data']['attributes']['as_owner'])
+    print("search as_owner")
+    if 'as_owner' in dataInput['data']['attributes']:
+        as_owner = str(dataInput['data']['attributes']['as_owner'])
+        print("as_owner found")
     return blockVerdict, result, as_owner

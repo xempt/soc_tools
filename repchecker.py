@@ -73,16 +73,17 @@ def main():
                 time.sleep(15) #api rate limit
                 virustotal_flag, virustotal_output, as_owner =virustotal.check(i,virusTotalKey, flag=abuseip_flag)
                 out_text += virustotal_output
-                out_text += '[*] AS: ' + as_owner + "\n"                
+                if as_owner:
+                    out_text += '[*] AS: ' + as_owner + "\n"                
                 out_text += "---------------------------------------------------"
 
                 #save results to maps to print after complete 
                 IP_results[i] = out_text
-                if "AMAZON" in as_owner.upper():
+                if as_owner and "AMAZON" in as_owner.upper():
                     AS_providers["AMAZON"].append(i)
-                elif "GOOGLE" in as_owner.upper():
+                elif as_owner and "GOOGLE" in as_owner.upper():
                     AS_providers["GOOGLE"].append(i)
-                elif "AZURE" in as_owner.upper():
+                elif as_owner and "AZURE" in as_owner.upper():
                     AS_providers["AZURE"].append(i)
                 else:
                     AS_providers["OTHER"].append(i)
