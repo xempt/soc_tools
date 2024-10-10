@@ -8,11 +8,12 @@ Revision:
 import os,sys,argparse,time
 from configparser import ConfigParser
 
+from datetime import datetime
+
 #from modules import threatcrowd
 # from modules import network
 from modules import virustotal
 from modules import abuseip
-
 
 #read keys.ini
 iniParser = ConfigParser()
@@ -32,8 +33,9 @@ def main():
         parser = argparse.ArgumentParser(description = desc)
         parser.add_argument("-v","--version",help="show version",action='version',version='%(prog)s 1.0')
         parser.add_argument("-f","--file",help="file location",type=str,dest="path")
-        parser.add_argument("-i","--input",help="check single ip/domain",type=str,dest="i",default='')
-        parser.add_argument("-o","--output",help="filename to save. directory: "+os.getcwd(),type=str,dest="output",default=os.getcwd()+"\output.txt")
+        parser.add_argument("-i","--input",help="check single ip/domain",type=str,dest="i")
+        parser.add_argument("-o","--output",help="filename to save. directory: "+os.getcwd(),type=str,dest="output")
+        parser.add_argument("-r","--records",help="blacklist records. directory: "+os.getcwd(),type=str,dest="records")
 
         #read arguments from cli
         args = parser.parse_args()
@@ -117,6 +119,13 @@ def main():
         if args.output:
             sys.stdout = open(args.output.format(),'w')
 
+        if args.records:
+            today = datetime.today()
+            with open('records.txt', 'w') as file:
+                for ip in IP_results:
+                    #ip,LAWA-Blacklist,Yes,Reference,<todays date, MM/DD/YYYY> daily block list
+                    file.write(f"{ip},LAWA-Blacklist,Yes,Reference,{today.strftime('%m/%d/%Y')} daily block list\n")
+        
         # print out saved results
         print("========================== RESULTS ==========================")
         for provider in AS_providers:
